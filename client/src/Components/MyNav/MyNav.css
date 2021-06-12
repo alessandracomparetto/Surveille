@@ -1,0 +1,6 @@
+.dropdown-item:active{
+    background-color: purple !important;
+}
+.navbar-dark{
+    background-color: purple;
+}
