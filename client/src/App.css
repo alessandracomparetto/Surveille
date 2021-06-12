@@ -36,3 +36,12 @@
     transform: rotate(360deg);
   }
 }
+
+.marginTopNavbar {
+  padding-top: 70px;
+}
+
+.btn-magenta {
+  background-color: magenta;
+  color: white;
+}

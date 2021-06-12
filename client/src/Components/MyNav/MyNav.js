@@ -1,18 +1,8 @@
-import {
-    Navbar,
-    Form,
-    FormControl,
-    Dropdown,
-    Button,
-    Row
-} from "react-bootstrap";
+import { Navbar, Dropdown, Button, } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import * as Icons from "react-bootstrap-icons";
 //   import { logoutUser } from "../../Api/DeleteApi";
-//   import {
-//     triggerNotification,
-//     triggerNotificationError,
-//   } from "../../Utilities/Notifications";
+//   import {triggerNotification, triggerNotificationError } from "../../Utilities/Notifications";
 import "./MyNav.css";
 
 export default function MyNav(props) {
@@ -28,32 +18,32 @@ export default function MyNav(props) {
                     {props.userName ? (
                         <Dropdown >
                             <Dropdown.Toggle variant="light" id="dropdown-basic" >
-                            Welcome <b>{props.userName}</b>{" "}
-                            <Icons.PersonCircle className="text-dark mr-2" size="1.45em" />
-                            <Dropdown.Menu>
-                                <Dropdown.Item
-                                /* onClick={() =>
-                                  logoutUser()
-                                    .then(() => {
-                                      triggerNotification(
-                                        "Logout success",
-                                        "You logged out succesfully",
-                                        "success"
-                                      );
-                                      props.setUserName("");
-                                    })
-                                    .catch((err) =>
-                                      triggerNotificationError(
-                                        err.message,
-                                        err.details || null,
-                                        "danger"
-                                      )
-                                    )
-                                } */
-                                >
-                                    Logout
-                                </Dropdown.Item>
-                            </Dropdown.Menu>
+                                Welcome <b>{props.userName}</b>{" "}
+                                <Icons.PersonCircle className="text-dark mr-2" size="1.45em" />
+                                <Dropdown.Menu>
+                                    <Dropdown.Item
+                                    /* onClick={() =>
+                                      logoutUser()
+                                        .then(() => {
+                                          triggerNotification(
+                                            "Logout success",
+                                            "You logged out succesfully",
+                                            "success"
+                                          );
+                                          props.setUserName("");
+                                        })
+                                        .catch((err) =>
+                                          triggerNotificationError(
+                                            err.message,
+                                            err.details || null,
+                                            "danger"
+                                          )
+                                        )
+                                    } */
+                                    >
+                                        Logout
+                                    </Dropdown.Item>
+                                </Dropdown.Menu>
                             </Dropdown.Toggle>
                         </Dropdown>
 
