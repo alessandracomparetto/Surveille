@@ -11,16 +11,23 @@ const getSurveys = ()=>{
                 }
                 resolve(res.json());
             })
-            .catch((err)=>{
-                if(err.response){
-                    err.response.json()
-                    .then((info)=>{
-                        reject({ message: err.message, details: JSON.stringify(info)})
-                    })
-                }else{
-                    reject({message: err.message})
+            .catch((err) => {
+                if (err.response && err.response.headers) {
+                  if (err.response.headers.get("Content-Type") === "application/json") { //this is an error coming from the database
+                    err.response
+                      .json()
+                      .then((x) =>
+                        reject({ message: err.message, details: JSON.stringify(x) })
+                      );
+                  } else { 
+                    err.response //this is an error that caused the fetch to fail
+                      .text()
+                      .then((x) => reject({ message: err.message, details: x }));
+                  }
+                } else {  //every other kind of errors
+                  reject({ message: err.message });
                 }
-            })
+              })
     })
 }
 
