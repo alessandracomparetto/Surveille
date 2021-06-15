@@ -27,43 +27,53 @@ const db_getSurveys = () => {
 const db_getSurvey = async (surveyid) => {
     try {
         let survey, result;
+        let stop = false;
         let sql = "SELECT title FROM survey WHERE id = ?"
         result = await new Promise((resolve, reject) => {
             db.get(sql, [surveyid], (err, row) => {
-                if (err) return reject(err);
-                else if (row === undefined) return resolve({ error: 'Not found.' });
-
+                if (err) return reject({ "error": err });
+                if (row === undefined) {
+                    stop = true;
+                    return resolve({ error: 'Survey not found.' });
+                }
                 resolve(row)
             })
         })
-
-        survey =  result ;
+        if (stop) return result;
+        survey = result;
 
         sql = "SELECT Q.id as id, text, open, min, max \
                         FROM survey S, question Q \
                         WHERE S.id = Q.id_survey AND S.id = ? \
                         ORDER BY Q.id"
-
         result = await new Promise((resolve, reject) => {
             db.all(sql, [surveyid], (err, rows) => {
-                if (err) return reject(err);
-                else if (rows === undefined) resolve({ error: 'Not found.' });
+                if (err) return reject({ "error": err });
+                if (rows.length == 0) {
+                    stop = true;
+                    return resolve({ error: 'Survey has no questions.' });
+                }
                 resolve(rows)
             })
         })
+        if (stop) return result;
 
         sql = "SELECT text FROM  option O\
                     WHERE  O.id_question= ?"
         for (let i = 0; i < result.length; i++) {
             if (!result[i].open) {
-                let opzioni = await new Promise((resolve, reject) =>{
+                let opzioni = await new Promise((resolve, reject) => {
                     db.all(sql, [result[i].id], (err, rows) => {
-                        if (err) return reject(err);
-                        else if (rows === undefined) resolve({ error: 'Not found.' });
+                        if (err) return reject({ "error": err });
+                        if (rows.length == 0) {
+                            stop = true;
+                            return resolve({ error: 'Error in loading options.' });
+                        }
                         resolve(rows)
                     })
                 })
-                result[i]={...result[i], "options": opzioni}
+                if (stop) return opzioni;
+                result[i] = { ...result[i], "options": opzioni }
             }
         }
         survey = { ...survey, "questions": result }

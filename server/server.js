@@ -28,7 +28,6 @@ app.get("/api/surveys", (req, res) => {
 })
 
 //GET /api/survey/:id 
-// REVIEW - errors!
 app.get("/api/survey/:id", [check("id").isInt({ min: 1 })], async(req, res) => {
   // setTimeout(async()=>{
   const errors = validationResult(req);

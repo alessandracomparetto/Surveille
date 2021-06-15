@@ -34,7 +34,10 @@ export default function SurveyForm(props) {
         <Container className="marginTopNavbar">
             {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
             {errorApi ?
-                (<ErrorAlert errors={errorApi} />)
+                (<><ErrorAlert errors={errorApi} />
+                    <Link style={{ textDecoration: "none" }} to="/">
+                        <Button variant="secondary">Back</Button>
+                    </Link></>)
                 :
                 (!loading &&
                     <Card className="text-center" border="warning">
@@ -54,13 +57,13 @@ export default function SurveyForm(props) {
                                             <Form.Label className="font-weight-bold">{question.text}</Form.Label>
                                             <Container>
                                                 <Row>
-                                                {question.options.map((x) => (
-                                                    <Col md={3}>
-                                                    <Form.Group controlId={x.text}>
-                                                        <Form.Check type="checkbox" label={x.text} />
-                                                    </Form.Group>
-                                                    </Col>
-                                                   ))}
+                                                    {question.options.map((x) => (
+                                                        <Col md={3}>
+                                                            <Form.Group controlId={x.text}>
+                                                                <Form.Check type="checkbox" label={x.text} />
+                                                            </Form.Group>
+                                                        </Col>
+                                                    ))}
                                                 </Row>
                                             </Container>
                                         </Form.Group>)
@@ -69,12 +72,12 @@ export default function SurveyForm(props) {
                         </Card.Body>
 
                         <Card.Footer className="d-flex justify-content-between">
-                        <Link style={{ textDecoration: "none" }} to="/">
-                        <Button variant="secondary">Back</Button>
-                        </Link>
+                            <Link style={{ textDecoration: "none" }} to="/">
+                                <Button variant="secondary">Back</Button>
+                            </Link>
                             <Button variant="purple">Submit your answers!</Button>
-                            
-                            </Card.Footer>
+
+                        </Card.Footer>
                     </Card>
                 )}
 

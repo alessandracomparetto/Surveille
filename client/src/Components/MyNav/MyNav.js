@@ -9,7 +9,7 @@ export default function MyNav(props) {
     return (
         <>
             <Navbar className="pr-2" variant="dark" fixed="top" expand="sm">
-                <Navbar.Brand href="#home">
+                <Navbar.Brand href="/">
                     <Icons.Award size="1.2em" className="mr-2" />
                     Surveille
                 </Navbar.Brand>
