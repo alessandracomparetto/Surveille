@@ -31,11 +31,13 @@ const db_getSurvey = async (surveyid) => {
         result = await new Promise((resolve, reject) => {
             db.get(sql, [surveyid], (err, row) => {
                 if (err) return reject(err);
+                else if (row === undefined) return resolve({ error: 'Not found.' });
+
                 resolve(row)
             })
         })
 
-        survey = { "title": result };
+        survey =  result ;
 
         sql = "SELECT Q.id as id, text, open, min, max \
                         FROM survey S, question Q \
@@ -45,6 +47,7 @@ const db_getSurvey = async (surveyid) => {
         result = await new Promise((resolve, reject) => {
             db.all(sql, [surveyid], (err, rows) => {
                 if (err) return reject(err);
+                else if (rows === undefined) resolve({ error: 'Not found.' });
                 resolve(rows)
             })
         })
@@ -56,10 +59,11 @@ const db_getSurvey = async (surveyid) => {
                 let opzioni = await new Promise((resolve, reject) =>{
                     db.all(sql, [result[i].id], (err, rows) => {
                         if (err) return reject(err);
+                        else if (rows === undefined) resolve({ error: 'Not found.' });
                         resolve(rows)
                     })
                 })
-                result[i]={...result[i], "opzioni": opzioni}
+                result[i]={...result[i], "options": opzioni}
             }
         }
         survey = { ...survey, "questions": result }

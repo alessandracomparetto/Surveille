@@ -1,1 +1,5 @@
 GET http://localhost:3001/api/surveys HTTP/1.1
+
+###
+
+GET http://localhost:3001/api/survey/1 HTTP/1.1

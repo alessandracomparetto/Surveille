@@ -12,8 +12,8 @@ export default function Homepage(props) {
         if(!props.userName){
             getSurveys()
             .then((res)=>{
+                seterrorApi(false);
                 setSurveyList(res);
-                console.log(res);
             }).catch((err) =>{
                 seterrorApi(err);
                 console.log(err);
