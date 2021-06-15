@@ -11,24 +11,33 @@ export default function SurveyForm(props) {
     const [errorApi, seterrorApi] = useState(false);
     const surveyid = useParams();
     const [survey, setSurvey] = useState([]);
+    const [submission, setSubission] = useState({survey:surveyid, user:undefined, answers:[]});
 
     useEffect(() => {
         getSurvey(surveyid.id)
             .then((res) => {
                 seterrorApi(false);
+                //TODO - delete
                 console.log(res);
+                //
                 setSurvey(res);
             })
             .catch((err) => {
                 seterrorApi(err);
-
-                console.log(err);
             })
             .finally(() => {
                 setloading(false);
             })
     }, [])
 
+    const handleChange = (event) =>{
+        console.log(event.target.value)
+        let temp = submission;
+        temp.answers= [...temp.answers, {"id_question": event.target.id, "value" : event.target.value }]
+        console.log("temp",temp)
+        // setAnswers((old)=>{return old.answers.push({"id_question": event.target.id, "value" : event.target.value })})
+        //FIXME - ancora le risposte si sovrascrivno. deve essere cambiato.
+        }
 
     return (
         <Container className="marginTopNavbar">
@@ -42,14 +51,21 @@ export default function SurveyForm(props) {
                 (!loading &&
                     <Card className="text-center" border="warning">
                         <Card.Header> <h2>Title: {survey.title} </h2></Card.Header>
-                        <Card.Body>
-                            <Form>
+                        <Form >
+                            <Card.Body>
+                                <Form.Group controlId="formBasicPassword">
+                                    <Form.Label>Please, enter here your name</Form.Label>
+                                    <Form.Control type="text" required />
+                                </Form.Group>
                                 {survey.questions.map((question) => (
                                     question.open ?
-                                        (<Form.Group key={question.id} controlId="exampleForm.ControlTextarea1">
+                                        (<Form.Group key={question.id} >
                                             <Form.Label className="font-weight-bold">{question.text}</Form.Label>
-                                            <Form.Text className="text-muted"> Max 200 characters</Form.Text>
-                                            <Form.Control as="textarea" rows={3} maxLength="200" />
+                                            <Form.Text className="text-muted" > Max 200 characters</Form.Text>
+                                            <Form.Control as="textarea" rows={3} 
+                                                            maxLength="200" id ={question.id} 
+                                                            required={(question.min>=1)? true : false} 
+                                                            onChange={handleChange}/>
 
                                         </Form.Group>
                                         ) :
@@ -58,8 +74,8 @@ export default function SurveyForm(props) {
                                             <Container>
                                                 <Row>
                                                     {question.options.map((x) => (
-                                                        <Col md={3}>
-                                                            <Form.Group controlId={x.text}>
+                                                        <Col key={x.id} md={3}>
+                                                            <Form.Group controlId={x.text} >
                                                                 <Form.Check type="checkbox" label={x.text} />
                                                             </Form.Group>
                                                         </Col>
@@ -68,16 +84,16 @@ export default function SurveyForm(props) {
                                             </Container>
                                         </Form.Group>)
                                 ))}
-                            </Form>
-                        </Card.Body>
+                            </Card.Body>
 
-                        <Card.Footer className="d-flex justify-content-between">
-                            <Link style={{ textDecoration: "none" }} to="/">
-                                <Button variant="secondary">Back</Button>
-                            </Link>
-                            <Button variant="purple">Submit your answers!</Button>
+                            <Card.Footer className="d-flex justify-content-between">
+                                <Link style={{ textDecoration: "none" }} to="/">
+                                    <Button variant="secondary">Back</Button>
+                                </Link>
+                                <Button variant="purple" type="submit">Submit your answers!</Button>
 
-                        </Card.Footer>
+                            </Card.Footer>
+                        </Form>
                     </Card>
                 )}
 
