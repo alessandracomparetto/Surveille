@@ -58,7 +58,7 @@ const db_getSurvey = async (surveyid) => {
         })
         if (stop) return result;
 
-        sql = "SELECT text FROM  option O\
+        sql = "SELECT id, text FROM  option O\
                     WHERE  O.id_question= ?"
         for (let i = 0; i < result.length; i++) {
             if (!result[i].open) {
