@@ -3,3 +3,19 @@ GET http://localhost:3001/api/surveys HTTP/1.1
 ###
 
 GET http://localhost:3001/api/survey/1 HTTP/1.1
+
+###
+
+POST http://localhost:3001/api/submission/ HTTP/1.1
+content-type: application/json
+
+{
+    "survey": "2",
+    "user": "Rhamiel",
+    "answers": [{
+        "id_question":"6","value":"23",
+        "id_question":7,"value":"Less than 3",
+        "id_question":8,"value":"No",
+        "id_question":"9","value":"3"
+    }]
+}

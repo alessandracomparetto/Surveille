@@ -5,6 +5,7 @@ import { Card, Button, Alert, Container, Form, Row, Col } from "react-bootstrap"
 import { Link } from "react-router-dom";
 
 import ErrorAlert from "./ErrorAlert";
+import { sendSubmission } from "../API/PostApi";
 
 export default function SurveyForm(props) {
     const [loading, setloading] = useState(true);
@@ -13,7 +14,7 @@ export default function SurveyForm(props) {
 
     const surveyid = useParams();
     const [survey, setSurvey] = useState([]);
-    const [submission, setSubission] = useState({ survey: surveyid.id, user: undefined, answers: [] });
+    const [submission, setSubmission] = useState({ survey: surveyid.id, user: undefined, answers: [] });
 
     useEffect(() => {
         getSurvey(surveyid.id)
@@ -23,13 +24,6 @@ export default function SurveyForm(props) {
                 console.log(res);
                 //
                 setSurvey(res);
-
-                setSubission((old) => {
-                    for (let i = 0; i < res.questions.length; i++) {
-                        if (!res.questions[i].open) old.answers[res.questions[i].id] = [];
-                    }
-                    return old;
-                })
             })
             .catch((err) => {
                 seterrorApi(err);
@@ -40,71 +34,67 @@ export default function SurveyForm(props) {
     }, [])
 
     const handleChange = (event, question_id, text) => {
-        let temp = {...submission};
+        let temp = { ...submission };
 
         if (event.target.id === "name") {
             temp.user = event.target.value;
         }
         else if (!question_id && !text) { //textarea
-            temp.answers[event.target.id] = { "id_question": event.target.id, "value": event.target.value }
-        }
-        else { //checkbox event
-            if (event.target.checked) temp.answers[question_id][event.target.id] = { "id_question": question_id, "value": text };
-            else temp.answers[question_id][event.target.id] = {};
-        }
-        // console.log(JSON.stringify(temp))
-        // console.log(temp)
-        setSubission(temp);
-    }
-
-    const remove_null= (answers)=>{
-        console.log("qui");
-        answers = answers.filter(Boolean);
-        for(let i = 0; i<answers.length; i++){
-            if(answers[i] instanceof Array){
-                if(answers[i].length === 0) answers.splice(i, 1);
-                else{
-                    answers[i] = answers[i].filter(Boolean);
-                }
-               
+            let index = temp.answers.findIndex((item) => item && item.id_question === event.target.id);
+            if (index === -1) temp.answers.push({ "id_question": event.target.id, "value": event.target.value })
+            else {
+                if (event.target.value === "") temp.answers.splice(index, 1);
+                else temp.answers[index] = { "id_question": event.target.id, "value": event.target.value };
             }
         }
-        
-        console.log(JSON.stringify(answers))
-        return answers;
+        else { //checkbox event
+            if (event.target.checked) {
+                let index = temp.answers.findIndex((item) => item && item.id_question === question_id && item.value === text);
+                if (index === -1) temp.answers.push({ "id_question": question_id, "value": text })
+                else temp.answers[index] = { "id_question": question_id, "value": text };
+            }
+            else {
+                let index = temp.answers.findIndex((item) => item && item.id_question === question_id && item.value === text);
+                temp.answers.splice(index, 1);
+            }
+        }
+        console.log(temp);
+        console.log(JSON.stringify(temp))
+        setSubmission(temp);
     }
 
     const validation = () => {
-        let flag = true;
-        let temp = {...submission};
-        temp.answers = remove_null(temp.answers);
-        console.log(temp);
-        // console.log(JSON.stringify(temp));
-        let min, max, id;
-        for (let i = 0; i < survey.questions.length; i++) { //ciclo sulle domande
-            if (!survey.questions[i].open) {
-                min = survey.questions[i].min;
-                max = survey.questions[i].max;
-                id = survey.questions[i].id;
-            }
-            for(let j = 0; j<temp.answers.length; j++){
-                if(temp.answers[j] instanceof Array && temp.answers[j].id_question == id){
-                    flag = flag && temp.answers[j].length >= min && temp.answers[j].length <= max
+        let result = true;
+        let count = 0;
+
+        for (const question of survey.questions) {
+            count = 0;
+            if (!question.open) {
+                console.log(question.id)
+                for (const answer of submission.answers) {
+                    console.log(answer.id_question)
+                    if (answer.id_question === question.id) {
+                        count++;
+                    }
                 }
+                console.log(count);
+                if (count) result = result && count >= question.min && count <= question.max;
+                else result = result && question.min === 0
             }
         }
-        return flag;
+        return result;
     }
 
     const handleSubmit = (event) => {
-        const form = event.currentTarget;
         event.preventDefault();
         event.stopPropagation();
         if (validation()) {
-            console.log("Ok")
+            setCompilationError(false);
+            sendSubmission(submission)
+            .then(()=> console.log("Ok"))
+            .catch((err)=>console.log(err))
         }
         else {
-            console.log("eheh")
             setCompilationError(true);
         }
     };

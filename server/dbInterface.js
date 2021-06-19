@@ -84,5 +84,46 @@ const db_getSurvey = async (surveyid) => {
     }
 }
 
+const isValidSurvey = (val) => {
+    // console.log(val)
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT * FROM survey WHERE id = ?"
+        db.get(sql, [val], (err, row) => {
+            if (err) return reject({ "error": err });
+            else if (row === undefined) return reject('Survey not found.')
+            resolve(row)
+        })
+    })
+}
+
+const areValidAnswers = async (val) => {
+    console.log(val)
+    let sql = 'SELECT * FROM question WHERE id = ?'
+    let result;
+    // for(answer of val){
+    result = await new Promise((resolve, reject) => {
+        db.get(sql, [val.id_question], (err, row) => {
+            if (err) return reject({ "error": err });
+            if (row === undefined) return reject( 'Question not found.' );
+            resolve(row)
+        })
+    })
+    return result;
+
+    // }
+    // return new Promise((resolve, reject) => {
+    //     const sql = "SELECT * FROM survey WHERE id = ?"
+    //     db.get(sql, [val], (err, row) => {
+    //         if (err) return reject({ "error": err });
+    //         else if (row === undefined) return reject('Survey not found.') 
+    //         resolve(row)
+    //     })
+    // })
+}
+
 exports.db_getSurveys = db_getSurveys;
 exports.db_getSurvey = db_getSurvey;
+
+//custom checks
+exports.isValidSurvey = isValidSurvey;
+exports.areValidAnswers = areValidAnswers;

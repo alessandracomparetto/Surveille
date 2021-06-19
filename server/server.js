@@ -46,6 +46,18 @@ app.get("/api/survey/:id", [check("id").isInt({ min: 1 })], async(req, res) => {
 // }, 3000);
 })
 
+//POST /api/submission
+app.post("/api/submission",  
+[check("survey").isInt({ min: 1 }).custom(val => dbInterface.isValidSurvey(val)),
+check("answers[*]").exists().custom(val => dbInterface.areValidAnswers(val))], 
+(req, res)=>{
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+ res.status(200);
+})
+
 // activate the server
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
