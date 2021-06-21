@@ -10,12 +10,43 @@ POST http://localhost:3001/api/submission/ HTTP/1.1
 content-type: application/json
 
 {
+"survey":"1",
+"user":"Gabriel",
+"answers":[
+    {"id_question":1,"value":"20"},
+    {"id_question":"3","value":"Michael Jordan"},
+    {"id_question":5,"value":"Futsal"},
+    {"id_question":5,"value":"Cricket"}
+    ]
+}
+
+####
+
+POST http://localhost:3001/api/sessions HTTP/1.1
+content-type: application/json
+
+{
+    "username": "leorio@studenti.polito.it",
+    "password": "Qwerty123"
+}
+
+####
+
+GET http://localhost:3001/api/sessions/current HTTP/1.1
+
+####
+
+DELETE http://localhost:3001/api/sessions/current HTTP/1.1
+
+####
+
+{
     "survey": "2",
     "user": "Rhamiel",
-    "answers": [{
-        "id_question":"6","value":"23",
-        "id_question":7,"value":"Less than 3",
-        "id_question":8,"value":"No",
-        "id_question":"9","value":"3"
-    }]
+    "answers": [
+        {"id_question":6,"value":"23"},
+        {"id_question":7,"value":"Less than 3"},
+        {"id_question":8,"value":"No"},
+        {"id_question":9,"value":"Makes life better!"}
+    ]
 }

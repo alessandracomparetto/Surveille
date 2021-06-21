@@ -84,8 +84,88 @@ const db_getSurvey = async (surveyid) => {
     }
 }
 
+const db_getAdminSurveys = (adminid) => {
+    return new Promise((resolve, reject) => {
+        let sql = 'SELECT s.id, s.title, count(*) as num FROM survey S, submission SS \
+                    where s.id = ss.id_survey AND s.id_admin = ? \
+                    GROUP by s.id '
+        db.all(sql, [adminid], (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows.map(x => {
+                return {
+                    id: x.id,
+                    title: x.title,
+                    num: x.num
+                }
+            }))
+        })
+    })
+}
+
+const db_addSubmission = async (submission) => {
+    let sql = 'INSERT INTO submission(id_survey, user) VALUES (?, ?)'
+    let lastID = await new Promise((resolve, reject) => {
+        db.run(sql, [submission.survey, submission.user], function (err) {
+            if (err) return reject(err);
+            resolve(this.lastID);
+        })
+    })
+
+    sql = 'INSERT INTO answer(id_question, id_submission, value) VALUES (?, ?, ?)'
+
+    for (const answer of submission.answers) {
+        await new Promise((resolve, reject) => {
+            db.run(sql, [answer.id_question, lastID, answer.value], function (err) {
+                if (err) return reject(err);
+                resolve(this.lastID);
+            })
+        })
+    }
+    return lastID;
+}
+
+//AUTH
+const db_getUser = (email, password) => {
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT * FROM admin WHERE mail = ?"
+        db.get(sql, [email], (err, row) => {
+            if (err) reject(err);
+            else if (row === undefined)
+                resolve(false);
+            else {
+                const user = { id: row.id, email: row.mail, name: row.name };
+                bcrypt.compare(password, row.hash).then(result => {
+                    if (result) resolve(user);
+                    else resolve(false);
+                })
+            }
+        })
+    })
+
+}
+const db_getuserById = async (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT * FROM admin WHERE id=?';
+        db.get(sql, [id], function (err, row) {
+            if (err) return reject(err);
+            else if (row === undefined)
+                resolve({ error: 'User not found.' });
+            else {
+                resolve(
+                    {
+                        id: row.id,
+                        email: row.email,
+                        name: row.name
+                    })
+            }
+        })
+    })
+}
+
+
+
+//validation
 const isValidSurvey = (val) => {
-    // console.log(val)
     return new Promise((resolve, reject) => {
         const sql = "SELECT * FROM survey WHERE id = ?"
         db.get(sql, [val], (err, row) => {
@@ -96,34 +176,67 @@ const isValidSurvey = (val) => {
     })
 }
 
-const areValidAnswers = async (val) => {
-    console.log(val)
+const areValidAnswers = async (answer) => {
     let sql = 'SELECT * FROM question WHERE id = ?'
-    let result;
-    // for(answer of val){
-    result = await new Promise((resolve, reject) => {
-        db.get(sql, [val.id_question], (err, row) => {
+    let question, options;
+    question = await new Promise((resolve, reject) => {
+        db.get(sql, [answer.id_question], (err, row) => {
             if (err) return reject({ "error": err });
-            if (row === undefined) return reject( 'Question not found.' );
+            if (row === undefined) return reject('Question not found.');
             resolve(row)
         })
     })
-    return result;
-
-    // }
-    // return new Promise((resolve, reject) => {
-    //     const sql = "SELECT * FROM survey WHERE id = ?"
-    //     db.get(sql, [val], (err, row) => {
-    //         if (err) return reject({ "error": err });
-    //         else if (row === undefined) return reject('Survey not found.') 
-    //         resolve(row)
-    //     })
-    // })
+    if (!question.open) {
+        sql = 'SELECT text FROM option WHERE id_question = ?'
+        options = await new Promise((resolve, reject) => {
+            db.all(sql, [answer.id_question], (err, rows) => {
+                if (err) return reject({ "error": err });
+                resolve(rows.map(x => x.text));
+            })
+        })
+        question.options = options;
+        if (!question.options.includes(answer.value)) throw new Error('Invalid option')
+    }
+    else {
+        if (!(answer.value.length <= 200)) throw new Error('Answer is too long')
+    }
+    return true;
 }
 
-exports.db_getSurveys = db_getSurveys;
-exports.db_getSurvey = db_getSurvey;
+const areValidMinMax = async (answers, id) => {
+    let sql = 'SELECT * FROM question WHERE id_survey = ?'
+    let questions = await new Promise((resolve, reject) => {
+        db.all(sql, [id], (err, rows) => {
+            if (err) return reject({ "error": err });
+            resolve(rows);
+        })
+    })
+    for (const question of questions) {
+        if (question.open && question.min === 1) {
+            if (answers.filter(e => e.id_question === question.id).length === 0) {
+                throw new Error(`Compulsory answer not found, question: ${question.id}`)
+            }
+        }
+        else if (!question.open) {
+            let options = answers.filter(e => e.id_question === question.id)
+            if (!(options.length >= question.min && options.length <= question.max)) {
+                throw new Error(`Range of multiple answers not respected, question: ${question.id} `)
+            }
+        }
+    }
+    return true;
+}
 
+
+
+exports.db_getSurveys = db_getSurveys
+exports.db_getSurvey = db_getSurvey
+exports.db_getAdminSurveys = db_getAdminSurveys
+exports.db_addSubmission = db_addSubmission
+//auth
+exports.db_getUser = db_getUser
+exports.db_getuserById = db_getuserById
 //custom checks
-exports.isValidSurvey = isValidSurvey;
-exports.areValidAnswers = areValidAnswers;
+exports.isValidSurvey = isValidSurvey
+exports.areValidAnswers = areValidAnswers
+exports.areValidMinMax = areValidMinMax

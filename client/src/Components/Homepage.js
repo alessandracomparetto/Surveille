@@ -1,6 +1,6 @@
 import { Container, Button, } from "react-bootstrap";
 import { useState, useEffect } from "react";
-import { getSurveys } from "../API/GetApi";
+import { getSurveys, getAdminSurveys } from "../API/GetApi";
 import SurveysPreview from "./SurveysPreview";
 import ErrorAlert from "./ErrorAlert";
 
@@ -16,10 +16,19 @@ export default function Homepage(props) {
                 setSurveyList(res);
             }).catch((err) =>{
                 seterrorApi(err);
-                console.log(err);
+            })
+        }
+        else{
+            getAdminSurveys()
+            .then((res)=>{
+                seterrorApi(false);
+                setSurveyList(res);
+                console.log(res);
+            }).catch((err) =>{
+                seterrorApi(err);
             })
         } 
-    }, [])
+    }, [props.userName])
 
     return (
         <>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Redirect } from "react-router-dom";
 import { getSurvey } from "../API/GetApi";
 import { Card, Button, Alert, Container, Form, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -11,18 +11,17 @@ export default function SurveyForm(props) {
     const [loading, setloading] = useState(true);
     const [errorApi, seterrorApi] = useState(false);
     const [compilationError, setCompilationError] = useState(false);
+    const [redirectState, setRedirectState] = useState("");
 
     const surveyid = useParams();
     const [survey, setSurvey] = useState([]);
     const [submission, setSubmission] = useState({ survey: surveyid.id, user: undefined, answers: [] });
 
     useEffect(() => {
+        if (!props.userName)
         getSurvey(surveyid.id)
             .then((res) => {
                 seterrorApi(false);
-                //TODO - delete
-                console.log(res);
-                //
                 setSurvey(res);
             })
             .catch((err) => {
@@ -31,7 +30,7 @@ export default function SurveyForm(props) {
             .finally(() => {
                 setloading(false);
             })
-    }, [])
+    }, [survey.id])
 
     const handleChange = (event, question_id, text) => {
         let temp = { ...submission };
@@ -41,10 +40,10 @@ export default function SurveyForm(props) {
         }
         else if (!question_id && !text) { //textarea
             let index = temp.answers.findIndex((item) => item && item.id_question === event.target.id);
-            if (index === -1) temp.answers.push({ "id_question": event.target.id, "value": event.target.value })
+            if (index === -1) temp.answers.push({ "id_question": parseInt(event.target.id), "value": event.target.value })
             else {
                 if (event.target.value === "") temp.answers.splice(index, 1);
-                else temp.answers[index] = { "id_question": event.target.id, "value": event.target.value };
+                else temp.answers[index] = { "id_question": parseInt(event.target.id), "value": event.target.value };
             }
         }
         else { //checkbox event
@@ -58,8 +57,6 @@ export default function SurveyForm(props) {
                 temp.answers.splice(index, 1);
             }
         }
-        console.log(temp);
-        console.log(JSON.stringify(temp))
         setSubmission(temp);
     }
 
@@ -70,14 +67,11 @@ export default function SurveyForm(props) {
         for (const question of survey.questions) {
             count = 0;
             if (!question.open) {
-                console.log(question.id)
                 for (const answer of submission.answers) {
-                    console.log(answer.id_question)
                     if (answer.id_question === question.id) {
                         count++;
                     }
                 }
-                console.log(count);
                 if (count) result = result && count >= question.min && count <= question.max;
                 else result = result && question.min === 0
             }
@@ -91,8 +85,12 @@ export default function SurveyForm(props) {
         if (validation()) {
             setCompilationError(false);
             sendSubmission(submission)
-            .then(()=> console.log("Ok"))
-            .catch((err)=>console.log(err))
+                .then(() => {
+                    setloading(true);
+                    setRedirectState("/")
+                }).catch((err) => {
+                    seterrorApi(err);
+                })
         }
         else {
             setCompilationError(true);
@@ -101,6 +99,8 @@ export default function SurveyForm(props) {
 
 
     return (
+        <>
+        {redirectState &&  <Redirect to="/" />}
         <Container className="marginTopNavbar">
             {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
             {errorApi ?
@@ -164,5 +164,6 @@ export default function SurveyForm(props) {
                 )}
 
         </Container>
+        </>
     )
 }
