@@ -14,25 +14,32 @@ content-type: application/json
 "user":"Gabriel",
 "answers":[
     {"id_question":1,"value":"20"},
-    {"id_question":"3","value":"Michael Jordan"},
+    {"id_question":3,"value":"Michael Jordan"},
     {"id_question":5,"value":"Futsal"},
     {"id_question":5,"value":"Cricket"}
     ]
 }
 
 ####
+GET http://localhost:3001/api/adminsurveys/ HTTP/1.1
 
+####
+GET http://localhost:3001/api/adminsurveys/2/answers HTTP/1.1
+
+
+####
 POST http://localhost:3001/api/sessions HTTP/1.1
 content-type: application/json
 
 {
-    "username": "leorio@studenti.polito.it",
+    "username": "kurapika@studenti.polito.it",
     "password": "Qwerty123"
 }
 
 ####
 
 GET http://localhost:3001/api/sessions/current HTTP/1.1
+
 
 ####
 

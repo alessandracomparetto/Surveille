@@ -111,17 +111,46 @@ const db_addSubmission = async (submission) => {
         })
     })
 
-    sql = 'INSERT INTO answer(id_question, id_submission, value) VALUES (?, ?, ?)'
+    sql = 'INSERT INTO answer(id_survey, id_question, id_submission, value) VALUES (?, ?, ?, ?)'
 
     for (const answer of submission.answers) {
         await new Promise((resolve, reject) => {
-            db.run(sql, [answer.id_question, lastID, answer.value], function (err) {
+            db.run(sql, [submission.survey, answer.id_question, lastID, answer.value], function (err) {
                 if (err) return reject(err);
                 resolve(this.lastID);
             })
         })
     }
     return lastID;
+}
+
+const db_getAnswers = (surveyid) => {
+    return new Promise((resolve, reject) => {
+        let result = [];
+        let sql = 'SELECT id_question, id_submission, value, user FROM answer, submission \
+         WHERE submission.id = answer.id_submission and answer.id_survey = ? '
+        db.all(sql, [surveyid], (err, rows) => {
+            if (err) return reject(err);
+            if (rows === undefined) return resolve({ error: 'Survey not found.' });
+            rows.map(x => {
+                let index = result.findIndex((item) => item && item.id_submission == x.id_submission);
+                if (index === -1) {
+                    result.push({
+                        "id_submission": x.id_submission,
+                        "user" : x.user,
+                        values: [
+                            { "id_question": x.id_question, "value": x.value }
+                        ]
+                    })
+
+                }
+                else {
+                    result[index].values.push({ "id_question": x.id_question, "value": x.value })
+                }
+            })
+            resolve(result);
+        })
+    })
 }
 
 //AUTH
@@ -143,6 +172,7 @@ const db_getUser = (email, password) => {
     })
 
 }
+
 const db_getuserById = async (id) => {
     return new Promise((resolve, reject) => {
         const sql = 'SELECT * FROM admin WHERE id=?';
@@ -161,8 +191,6 @@ const db_getuserById = async (id) => {
         })
     })
 }
-
-
 
 //validation
 const isValidSurvey = (val) => {
@@ -227,11 +255,10 @@ const areValidMinMax = async (answers, id) => {
     return true;
 }
 
-
-
 exports.db_getSurveys = db_getSurveys
 exports.db_getSurvey = db_getSurvey
 exports.db_getAdminSurveys = db_getAdminSurveys
+exports.db_getAnswers = db_getAnswers
 exports.db_addSubmission = db_addSubmission
 //auth
 exports.db_getUser = db_getUser

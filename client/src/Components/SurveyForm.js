@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Redirect } from "react-router-dom";
-import { getSurvey } from "../API/GetApi";
-import { Card, Button, Alert, Container, Form, Row, Col } from "react-bootstrap";
+import { getSurvey, getAdminSurveyAnswers } from "../API/GetApi";
+import { Card, Button, Alert, Container, Form, Row, Col, Pagination } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 import ErrorAlert from "./ErrorAlert";
@@ -16,13 +16,26 @@ export default function SurveyForm(props) {
     const surveyid = useParams();
     const [survey, setSurvey] = useState([]);
     const [submission, setSubmission] = useState({ survey: surveyid.id, user: undefined, answers: [] });
+    const [values, setValues] = useState([]);
+    const [counter, setCounter] = useState();
+
+    //FIXME - errore dei checkbox
 
     useEffect(() => {
-        if (!props.userName)
         getSurvey(surveyid.id)
             .then((res) => {
                 seterrorApi(false);
                 setSurvey(res);
+                if (props.userName) {
+                    getAdminSurveyAnswers(surveyid.id)
+                        .then((res) => {
+                            setValues(res);
+                            setCounter(0);
+                        })
+                        .catch((err) => {
+                            seterrorApi(err);
+                        })
+                }
             })
             .catch((err) => {
                 seterrorApi(err);
@@ -30,7 +43,9 @@ export default function SurveyForm(props) {
             .finally(() => {
                 setloading(false);
             })
-    }, [survey.id])
+
+
+    }, [])
 
     const handleChange = (event, question_id, text) => {
         let temp = { ...submission };
@@ -39,7 +54,7 @@ export default function SurveyForm(props) {
             temp.user = event.target.value;
         }
         else if (!question_id && !text) { //textarea
-            let index = temp.answers.findIndex((item) => item && item.id_question === event.target.id);
+            let index = temp.answers.findIndex((item) => item && item.id_question == event.target.id);
             if (index === -1) temp.answers.push({ "id_question": parseInt(event.target.id), "value": event.target.value })
             else {
                 if (event.target.value === "") temp.answers.splice(index, 1);
@@ -97,73 +112,112 @@ export default function SurveyForm(props) {
         }
     };
 
+    const findAnswer = (questionid, label) => {
+
+        let index;
+        if (!label) {
+            index = values[counter].values.findIndex((item) => item && item.id_question === questionid);
+            if (index === -1) return "No answer given"
+            else return values[counter].values[index].value;
+        }
+        else {
+            index = values[counter].values.findIndex((item) => item && item.id_question === questionid && item.value === label);
+            if (index === -1) return false
+            else return true;
+        }
+    }
 
     return (
         <>
-        {redirectState &&  <Redirect to="/" />}
-        <Container className="marginTopNavbar">
-            {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
-            {errorApi ?
-                (<><ErrorAlert errors={errorApi} />
-                    <Link style={{ textDecoration: "none" }} to="/">
-                        <Button variant="secondary">Back</Button>
-                    </Link></>)
-                :
-                (!loading &&
-                    <Card className="text-center" border="warning">
-                        <Card.Header> <h2>Title: {survey.title} </h2></Card.Header>
-                        <Form onSubmit={handleSubmit} >
-                            <Card.Body>
-                                <Form.Group>
-                                    <Form.Label>Please, write here your name</Form.Label>
-                                    <Form.Control id="name" type="text" required onChange={handleChange} />
-                                </Form.Group>
-                                {survey.questions.map((question) => (
-                                    question.open ?
-                                        (<Form.Group key={question.id} >
-                                            <Form.Label className="font-weight-bold">{question.text}</Form.Label>
-                                            <Form.Text className="text-muted" > Max 200 characters</Form.Text>
-                                            <Form.Control as="textarea" rows={3}
-                                                maxLength="200" id={question.id}
-                                                required={(question.min >= 1) ? true : false}
-                                                onChange={handleChange} />
+            {redirectState && <Redirect to="/" />}
+            <Container className="marginTopNavbar">
+                {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
+                {errorApi ?
+                    (<><ErrorAlert errors={errorApi} />
+                        <Link style={{ textDecoration: "none" }} to="/">
+                            <Button variant="secondary">Back</Button>
+                        </Link></>)
+                    :
+                    (!loading &&
+                        <Card className="text-center" border="warning">
+                            <Card.Header> <h2>Title: {survey.title} </h2></Card.Header>
+                            <Form onSubmit={handleSubmit} >
+                                <Card.Body>
+                                    <Form.Group>
+                                        <Form.Label>{props.userName ? "Compilation from user:" : "Please, write here your name"}</Form.Label>
+                                        {(values.length > 0 && counter !== undefined) ?
+                                            (<Form.Control type="text" value={values[counter].user} />) :
+                                            (<Form.Control id="name" type="text" required onChange={handleChange} />)}
+                                    </Form.Group>
+                                    {survey.questions.map((question) => (
+                                        question.open ?
+                                            (<Form.Group key={question.id} >
+                                                <Form.Label className="font-weight-bold">{question.text}</Form.Label>
+                                                <Form.Text className="text-muted" > Max 200 characters{(question.min >= 1) ? ", compulsory" : ""}</Form.Text>
+                                                {(values.length > 0 && counter !== undefined) ?
+                                                    (<Form.Control as="textarea" rows={3} value={findAnswer(question.id)} />) :
+                                                    (<Form.Control as="textarea" rows={3}
+                                                        maxLength="200" id={question.id}
+                                                        required={(question.min >= 1) ? true : false}
+                                                        onChange={handleChange} />)}
+                                            </Form.Group>
+                                            ) :
+                                            (<Form.Group key={question.id} >
+                                                <Form.Label className="font-weight-bold">{question.text}</Form.Label>
 
-                                        </Form.Group>
-                                        ) :
-                                        (<Form.Group key={question.id} >
-                                            <Form.Label className="font-weight-bold">{question.text}</Form.Label>
+                                                <Container>
+                                                    <Row>
+                                                        {question.options.map((x) => (
+                                                            <Col key={x.id} md={3} >
+                                                                <Form.Group  >
+                                                                    {(values.length > 0 && counter !== undefined) ?
+                                                                        (<Form.Check type="checkbox" label={x.text} checked={findAnswer(question.id, x.text)} />) :
+                                                                        (<Form.Check type="checkbox" id={x.id} label={x.text}
+                                                                            onChange={(e) => { handleChange(e, question.id, x.text) }} />)}
+                                                                </Form.Group>
+                                                            </Col>
+                                                        ))}
+                                                    </Row>
+                                                    <Form.Text className="text-muted" > min: {question.min}, max: {question.max}</Form.Text>
+                                                </Container>
+                                            </Form.Group>)
+                                    ))}
+                                </Card.Body>
+                                <Card.Footer >
+                                    {compilationError && <Alert variant="danger">Controlla la tua compilazione, ci sono degli errori!</Alert>}
 
-                                            <Container>
-                                                <Row>
-                                                    {question.options.map((x) => (
-                                                        <Col key={x.id} md={3} >
-                                                            <Form.Group  >
-                                                                <Form.Check type="checkbox" id={x.id} label={x.text}
-                                                                    onChange={(e) => { handleChange(e, question.id, x.text) }} />
-                                                            </Form.Group>
-                                                        </Col>
-                                                    ))}
-                                                </Row>
-                                                <Form.Text className="text-muted" > min: {question.min}, max: {question.max}</Form.Text>
-                                            </Container>
-                                        </Form.Group>)
-                                ))}
-                            </Card.Body>
-                            <Card.Footer >
-                                {compilationError && <Alert variant="danger">Controlla la tua compilazione, ci sono degli errori!</Alert>}
+                                    <div className="d-flex justify-content-between">
+                                        <Link style={{ textDecoration: "none" }} to="/">
+                                            <Button variant="secondary">Back</Button>
+                                        </Link>
+                                        {!props.userName && <Button variant="purple" type="submit">Submit your answers!</Button>}
+                                        {values.length > 0 && counter !== undefined && <Pagination>
+                                            <Pagination.Prev
+                                                onClick={() => setCounter((old) => {
+                                                    if (old - 1 >= 0) return old - 1
+                                                    else return values.length-1
+                                                })} />
+                                            {values.map((item, index) => (
+                                                index <9 && <Pagination.Item key={index} active={counter + 1 === index + 1}
+                                                    onClick={(() => { setCounter(index) })} >{index + 1}</Pagination.Item>
+                                                    
+                                            ))}
+                                            {values.length>= 9 && <><Pagination.Ellipsis active={counter + 1 > 9 && counter + 1 < values.length}/>
+                                            <Pagination.Item key={values.length-1 } active={counter + 1 === values.length}
+                                            onClick={(() => { setCounter(values.length-1) })}  >{values.length}</Pagination.Item></>}
+                                            <Pagination.Next
+                                                onClick={() => setCounter((old) => {
+                                                    if (old + 1 < values.length) return old + 1
+                                                    else return 0
+                                                })} />
+                                        </Pagination>}
+                                    </div>
+                                </Card.Footer>
+                            </Form>
+                        </Card>
+                    )}
 
-                                <div className="d-flex justify-content-between">
-                                    <Link style={{ textDecoration: "none" }} to="/">
-                                        <Button variant="secondary">Back</Button>
-                                    </Link>
-                                    <Button variant="purple" type="submit">Submit your answers!</Button>
-                                </div>
-                            </Card.Footer>
-                        </Form>
-                    </Card>
-                )}
-
-        </Container>
+            </Container>
         </>
     )
 }

@@ -109,7 +109,6 @@ app.get("/api/surveys", (req, res) => {
 
 //GET /api/survey/:id 
 app.get("/api/survey/:id", [check("id").isInt({ min: 1 })], async (req, res) => {
-  // setTimeout(async()=>{
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array() });
@@ -121,7 +120,6 @@ app.get("/api/survey/:id", [check("id").isInt({ min: 1 })], async (req, res) => 
   } catch (err) {
     res.status(500).json({ errors: `Database errors: ${err}.` })
   };
-  // }, 3000);
 })
 
 app.get("/api/adminsurveys", isLoggedIn, (req, res) => {
@@ -134,19 +132,27 @@ app.get("/api/adminsurveys", isLoggedIn, (req, res) => {
     );
 })
 
-app.get("api/adminsurveys/:id/answers", [isLoggedin, check("id").isInt({ min: 1 })],
-  async (req, res) => {
+app.get("/api/adminsurveys/:id/answers", [isLoggedIn, check("id").isInt({ min: 1 })], (req, res) => {
+  //TODO- controlla se l'utente loggato è quello a cui appartiene il questionario
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
     }
-    // dbInterface...
-    //TODO!!
+    dbInterface.db_getAnswers(req.params.id)
+      .then((answers) => {
+        if (answers.error) res.status(404).json(answers);
+        else res.status(200).json(answers);
+      })
+      .catch((err) =>
+        res.status(500).json({
+          errors: `Database errors: ${err}.`,
+        })
+      )
   })
 
 //POST /api/submission
 app.post("/api/submission",
-  [check("survey").isInt({ min: 1 }).custom(val => dbInterface.isValidSurvey(val)),
+  [check("survey").isInt({ min: 1 }).custom(async val => await dbInterface.isValidSurvey(val)),
   check("answers").exists().isArray().custom(async (val, { req }) => await dbInterface.areValidMinMax(val, req.body.survey)),
   check("answers[*]").exists().custom(async (val) => await dbInterface.areValidAnswers(val))],
   async (req, res) => {

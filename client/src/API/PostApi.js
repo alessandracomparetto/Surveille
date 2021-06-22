@@ -1,4 +1,5 @@
 const sendSubmission = (submission) => {
+  console.log(submission);
     return new Promise((resolve, reject) => {
       fetch("http://localhost:3000/api/submission/", {
         method: "POST",
