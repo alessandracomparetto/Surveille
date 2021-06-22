@@ -1,5 +1,6 @@
 import { Container, Button, } from "react-bootstrap";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getSurveys, getAdminSurveys } from "../API/GetApi";
 import SurveysPreview from "./SurveysPreview";
 import ErrorAlert from "./ErrorAlert";
@@ -35,7 +36,10 @@ export default function Homepage(props) {
             {props.userName ?
                 (<Container className="d-flex justify-content-between mt-2  marginTopNavbar">
                     <h3>Welcome! Here we have your surveys! </h3>
+                    < Link style={{ textDecoration: "none" }} to={`/survey`} className="ml-auto my-auto">
                     <Button variant="magenta">Add Survey</Button>
+            </Link>
+                    
                 </Container>)
                 :
                 (<Container className="mt-2 marginTopNavbar">

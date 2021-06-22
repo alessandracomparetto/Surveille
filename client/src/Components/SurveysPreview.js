@@ -16,7 +16,7 @@ export default function SurveysPreview(props) {
             (<span> Number of submission: {x.num}</span>) : 
             (<span> Author: {x.author} <br/> Number of questions: {x.num}</span>)}
             </Card.Text>
-            < Link style={{ textDecoration: "none" }} to={props.userName? (`/survey/${x.id}/answers/`): (`/survey/${x.id}`) } className="ml-auto my-auto">
+            < Link style={{ textDecoration: "none" }} to={`/survey/${x.id}`} className="ml-auto my-auto">
             <Button variant="light" ><Icons.Megaphone size="2em" className="mr-2" /></Button>
             </Link>
           </Card.Body>
