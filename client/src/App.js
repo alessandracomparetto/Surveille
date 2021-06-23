@@ -4,7 +4,7 @@ import LoginForm from "./Components/LoginForm"
 import MyNav from "./Components/MyNav"
 import Homepage from "./Components/Homepage"
 import SurveyForm from "./Components/SurveyForm";
-import SurveyCreationForm from "./Components/SurveyCreationForm";
+import SurveyCreationForm from "./Components/SurveyCreationForm/SurveyCreationForm";
 import { useState } from "react";
 import { BrowserRouter as Router, Route, Switch, } from "react-router-dom";
 
