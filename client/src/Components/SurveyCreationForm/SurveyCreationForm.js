@@ -5,7 +5,7 @@ import QuestionCard from "./QuestionCard";
 
 export default function SurveyCreationForm() {
     const [title, setTitle] = useState("")
-    const [questions, setQuestions] = useState([{ question: "", min: 0, max: 1, open: 1, options: [" "] }]);
+    const [questions, setQuestions] = useState([{ question: "", min: 0, max: 1, open: 1, options: [""] }]);
     const [compilationError, setCompilationError] = useState(false);
 
     const updateOptions = (value, questionIndex, optionIndex) => {
@@ -44,17 +44,18 @@ export default function SurveyCreationForm() {
         }))
     }
     const updateOpen = (questionIndex) => {
-        if(!questions[questionIndex].open){ 
+        if (!questions[questionIndex].open) {
             setQuestions(old => old.map((item, index) => {
-                if (index === questionIndex) return { ...item, open:1, options: [" "]  }
+                if (index === questionIndex) return { ...item, open: 1, options: [" "] }
                 else return item;
             }))
         }
-        else{setQuestions(old => old.map((item, index) => {
-            if (index === questionIndex) return { ...item, open: 0 }
-            else return item;
-        }))
-    }
+        else {
+            setQuestions(old => old.map((item, index) => {
+                if (index === questionIndex) return { ...item, open: 0 }
+                else return item;
+            }))
+        }
     }
     const updateMinMax = (questionIndex, min, max) => {
         let open = questions[questionIndex].open;
@@ -98,15 +99,21 @@ export default function SurveyCreationForm() {
         setCompilationError(false)
 
         if (questions.length === 0) flag = true;
-        for(const question of questions){
-            if(question.max > question.options.length){
-                flag=true;
-                break;
-            }
-            for(const option of question.options){
-                if(option===" "){
-                    flag=true;
-                break;
+        for (const question of questions) {
+            if (!question.open) {
+                if (question.options.length < 1) {
+                    flag = true
+                    break
+                }
+                if (question.max > question.options.length) {
+                    flag = true;
+                    break;
+                }
+                for (const option of question.options) {
+                    if (!option.replaceAll(' ', '')) {
+                        flag = true;
+                        break;
+                    }
                 }
             }
         }
@@ -143,10 +150,12 @@ export default function SurveyCreationForm() {
                             ))}
 
                         </Card.Body >
-                        {compilationError && <Alert variant="danger">Check your compilation <br />
+                        {compilationError && <Alert variant="danger">Check your compilation: <br />
                             <ul>
+                                <li>In a multiple choice question, you must have at least one non-empty option.</li>
+                                <li>Max number must be less than or equal to the number of options.</li>
                                 <li>Options must not be empty. Delete the ones you're not using.</li>
-                                <li>In a multiple choice question, max number must be less than or equal to the number of options.</li></ul>
+                                </ul>
                             Fix your mistakes and try again. </Alert>}
 
                         <Card.Footer className="d-flex justify-content-between">
@@ -155,7 +164,7 @@ export default function SurveyCreationForm() {
                                 <Button variant="secondary">Back</Button>
                             </Link>
                             <Button variant="magenta"
-                                onClick={() => { setQuestions(old => [...old, { question: "", min: 0, max: 1, open: 1, options: [" "] }]) }}>Add question</Button>
+                                onClick={() => { setQuestions(old => [...old, { question: "", min: 0, max: 1, open: 1, options: [""] }]) }}>Add question</Button>
 
                             <Button variant="purple" type="submit" >Submit</Button>
                         </Card.Footer>
