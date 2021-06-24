@@ -184,7 +184,7 @@ export default function SurveyForm(props) {
                                     ))}
                                 </Card.Body>
                                 <Card.Footer >
-                                    {compilationError && <Alert variant="danger">Controlla la tua compilazione, ci sono degli errori!</Alert>}
+                                    {compilationError && <Alert variant="danger">Check the compilation, there are some errors!</Alert>}
 
                                     <div className="d-flex justify-content-between">
                                         <Link style={{ textDecoration: "none" }} to="/">

@@ -24,7 +24,6 @@ export default function Homepage(props) {
             .then((res)=>{
                 seterrorApi(false);
                 setSurveyList(res);
-                console.log(res);
             }).catch((err) =>{
                 seterrorApi(err);
             })
