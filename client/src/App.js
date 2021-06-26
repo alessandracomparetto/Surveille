@@ -19,7 +19,7 @@ function App() {
           <Route render={() => <MyNav userName={userName} setUserName={setUserName} />} />
         </Switch>
         <Route exact path="/" render={() => (<Homepage userName={userName} />)} />
-        <Route exact path="/survey" render={()=> (<SurveyCreationForm/>)}/>
+        <Route exact path="/survey" render={() => (<SurveyCreationForm />)} />
         <Route path="/survey/:id" render={() => (<SurveyForm userName={userName} />)} />
       </Router>
     </>

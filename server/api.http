@@ -2,7 +2,7 @@ GET http://localhost:3001/api/surveys HTTP/1.1
 
 ###
 
-GET http://localhost:3001/api/survey/1 HTTP/1.1
+GET http://localhost:3001/api/survey/3 HTTP/1.1
 
 ###
 
@@ -46,14 +46,20 @@ GET http://localhost:3001/api/sessions/current HTTP/1.1
 DELETE http://localhost:3001/api/sessions/current HTTP/1.1
 
 ####
+POST http://localhost:3001/api/survey/ HTTP/1.1
+content-type: application/json
 
-{
-    "survey": "2",
-    "user": "Rhamiel",
-    "answers": [
-        {"id_question":6,"value":"23"},
-        {"id_question":7,"value":"Less than 3"},
-        {"id_question":8,"value":"No"},
-        {"id_question":9,"value":"Makes life better!"}
+{"title":"Anime",
+"questions":
+    [
+        {"question":"Why do you like anime?","min":1,"max":1,"open":1,"options":
+            [""]
+        },
+        {"question":"Check the ones you've watched","min":1,"max":8,"open":0,"options":
+            ["The Promised Neverland"," Attack on Titan"," Cowboy Bebop"," My Hero Academia"," Ergo Proxy"]
+        },
+        {"question":"Tell us which one is your favorite and why.","min":1,"max":1,"open":1,"options":
+            [""]
+        }
     ]
 }

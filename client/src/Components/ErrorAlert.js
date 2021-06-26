@@ -1,6 +1,6 @@
-import { Alert,Collapse, Container } from "react-bootstrap";
+import { Alert, Container } from "react-bootstrap";
 import { EmojiFrownFill } from "react-bootstrap-icons";
-import {useState} from 'react'
+import { useState } from 'react'
 
 function ErrorAlert(props) {
   const { message, details } = props.errors;
@@ -15,10 +15,10 @@ function ErrorAlert(props) {
         {details ? (
           <div>
             <hr />
-            <div onClick={()=>setcollapse(x=>!x)}><Alert.Link  href="#">{`Expand info ${collapse?"\u25bc":"\u25c4"}`}   </Alert.Link></div>
-            <Collapse in={collapse}>
+            <div onClick={() => setcollapse(x => !x)}><Alert.Link href="#">{`Expand info ${collapse ? "\u25bc" : "\u25c4"}`}   </Alert.Link></div>
+            {collapse && <div >
               <p className="mb-0">{details}</p>
-            </Collapse>
+            </div>}
           </div>
         ) : null}
       </Alert>

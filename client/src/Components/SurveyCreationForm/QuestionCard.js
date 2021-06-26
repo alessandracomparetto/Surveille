@@ -1,11 +1,6 @@
-import { Card, Button, Form, Row, Col, Tooltip } from "react-bootstrap";
+import { Card, Button, Form, Row, Col, } from "react-bootstrap";
 import * as Icons from "react-bootstrap-icons";
 
-const renderTooltip = (props) => (
-    <Tooltip id="button-tooltip" >
-        Tooltip
-    </Tooltip>
-);
 
 export default function QuestionCard(props) {
 
@@ -52,10 +47,10 @@ export default function QuestionCard(props) {
                             onClick={() => { props.updateOpen(props.index) }} />
                     </Col>
                     <Col sm={6}>
-                            <Button variant="outline-dark" disabled={props.question.open} 
-                                onClick={() => { props.updateOptions(0, props.index) }}>
-                                Add Option <Icons.PlusCircle className="text-primary " />
-                            </Button>
+                        <Button variant="outline-dark" disabled={props.question.open}
+                            onClick={() => { props.updateOptions(0, props.index) }}>
+                            Add Option <Icons.PlusCircle className="text-primary " />
+                        </Button>
                     </Col>
                 </Form.Group>
                 {!props.question.open && props.question.options.map((x, index) => (

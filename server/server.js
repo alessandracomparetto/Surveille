@@ -122,6 +122,7 @@ app.get("/api/survey/:id", [check("id").isInt({ min: 1 })], async (req, res) => 
   };
 })
 
+//GET /api/adminsurveys
 app.get("/api/adminsurveys", isLoggedIn, (req, res) => {
   dbInterface.db_getAdminSurveys(req.user.id)
     .then((surveys) => {
@@ -132,8 +133,8 @@ app.get("/api/adminsurveys", isLoggedIn, (req, res) => {
     );
 })
 
-app.get("/api/adminsurveys/:id/answers", [isLoggedIn, check("id").isInt({ min: 1 })], (req, res) => {
-  //TODO- controlla se l'utente loggato è quello a cui appartiene il questionario
+app.get("/api/adminsurveys/:id/answers", [isLoggedIn,
+  check("id").isInt({ min: 1 }).custom(async (val, { req }) => { await dbInterface.isValidUser(val, req.user.id) })], (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
@@ -165,9 +166,29 @@ app.post("/api/submission",
       res.status(201).json({ addedSubmission: id })
     }
     catch (err) {
-      res.status(503).json({ errors: `Database error during the submission: ${err}.` })
+      res.status(503).json({ errors: `Database error during addition of submission: ${err}.` })
     }
 
+  })
+
+//POST /api/survey
+app.post("/api/survey", [
+  isLoggedIn,
+  check("title").exists(),
+  check("questions").exists().isArray(),
+  check("questions[*]").exists().custom(async (question) => await dbInterface.isValidQuestion(question))],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+    try {
+      let id = await dbInterface.db_addSurvey(req.body, req.user.id)
+      res.status(201).json({ addedSurvey: id })
+    }
+    catch (err) {
+      res.status(503).json({ errors: `Database error during addition of survey: ${err}.` })
+    }
   })
 
 // activate the server

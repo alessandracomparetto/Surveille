@@ -1,4 +1,4 @@
-import { Navbar, Dropdown, Button, } from "react-bootstrap";
+import { Navbar, Dropdown, Button, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import * as Icons from "react-bootstrap-icons";
 import { logoutUser } from "../../API/DeleteApi";
@@ -10,25 +10,26 @@ import "./MyNav.css";
 export default function MyNav(props) {
 
     const [redirectState, setRedirectState] = useState("");
+    const [logoutError, setLogoutError] = useState(false);
 
-    const handleLogout= ()=>{
+    const handleLogout = () => {
+        setLogoutError(false)
         logoutUser()
-        .then(() => {
-            props.setUserName("");
-            setRedirectState("/")
-        })
-        .catch((err) =>console.log(err))
+            .then(() => {
+                props.setUserName("");
+                setRedirectState("/")
+            })
+            .catch((err) => setLogoutError(true))
     }
-    
+
     return (
         <>
-         {redirectState && <Redirect to="/" />}
+            {redirectState && <Redirect to="/" />}
             <Navbar className="pr-2" variant="dark" fixed="top" expand="sm">
                 <Navbar.Brand href="/">
                     <Icons.Award size="1.2em" className="mr-2" />
                     Surveille
                 </Navbar.Brand>
-
                 <div className="mr-2 ml-auto" style={{ color: "#ffffff" }}>
                     {props.userName ? (
                         <Dropdown >
@@ -39,19 +40,21 @@ export default function MyNav(props) {
                                     <Dropdown.Item
                                         onClick={handleLogout}
                                     >
-                                    Logout
+                                        Logout
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown.Toggle>
                         </Dropdown>
 
-                ) : (
-                <Link style={{ textDecoration: "none" }} to="/login">
-                    <Button variant="outline-light">Login Admin</Button>
-                </Link>
+                    ) : (
+                        <Link style={{ textDecoration: "none" }} to="/login">
+                            <Button variant="outline-light">Login Admin</Button>
+                        </Link>
                     )}
                 </div>
-        </Navbar>
+            </Navbar>
+            {logoutError && <Alert variant="warning" className="mt-5 mb-0">Unable to logout</Alert>}
+
         </>
     );
 }

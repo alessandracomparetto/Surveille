@@ -1,8 +1,8 @@
 const logoutUser = () => {
     return new Promise((resolve, reject) => {
         fetch(`/api/sessions/current`, {
-                method: "DELETE",
-            })
+            method: "DELETE",
+        })
             .then((res) => {
                 if (!res.ok) {
                     const error = new Error(`${res.status}: ${res.statusText}`);

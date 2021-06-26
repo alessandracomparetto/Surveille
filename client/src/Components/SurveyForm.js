@@ -15,11 +15,9 @@ export default function SurveyForm(props) {
 
     const surveyid = useParams();
     const [survey, setSurvey] = useState([]);
-    const [submission, setSubmission] = useState({ survey: surveyid.id, user: undefined, answers: [] });
+    const [submission, setSubmission] = useState({ survey: surveyid.id, user: "", answers: [] });
     const [values, setValues] = useState([]);
     const [counter, setCounter] = useState();
-
-    //FIXME - errore dei checkbox
 
     useEffect(() => {
         getSurvey(surveyid.id)
@@ -43,8 +41,7 @@ export default function SurveyForm(props) {
             .finally(() => {
                 setloading(false);
             })
-
-
+        // eslint-disable-next-line
     }, [])
 
     const handleChange = (event, question_id, text) => {
@@ -54,7 +51,7 @@ export default function SurveyForm(props) {
             temp.user = event.target.value;
         }
         else if (!question_id && !text) { //textarea
-            let index = temp.answers.findIndex((item) => item && item.id_question == event.target.id);
+            let index = temp.answers.findIndex((item) => item && parseInt(item.id_question) === parseInt(event.target.id))
             if (index === -1) temp.answers.push({ "id_question": parseInt(event.target.id), "value": event.target.value })
             else {
                 if (event.target.value === "") temp.answers.splice(index, 1);
@@ -113,11 +110,10 @@ export default function SurveyForm(props) {
     };
 
     const findAnswer = (questionid, label) => {
-
         let index;
         if (!label) {
             index = values[counter].values.findIndex((item) => item && item.id_question === questionid);
-            if (index === -1) return "No answer given"
+            if (index === -1) return ""
             else return values[counter].values[index].value;
         }
         else {
@@ -127,6 +123,20 @@ export default function SurveyForm(props) {
         }
     }
 
+    const findValue = (questionid, label) => {
+        let index;
+        if (!label) {
+            index = submission.answers.findIndex((item) => item && parseInt(item.id_question) === parseInt(questionid));
+            if (index === -1) return ""
+            else return submission.answers[index].value
+        }
+        else {
+            index = submission.answers.findIndex((item) => item && item.id_question === questionid && item.value === label);
+            if (index === -1) return false
+            else return true
+        }
+
+    }
     return (
         <>
             {redirectState && <Redirect to="/" />}
@@ -145,21 +155,29 @@ export default function SurveyForm(props) {
                                 <Card.Body>
                                     <Form.Group>
                                         <Form.Label>{props.userName ? "Compilation from user:" : "Please, write here your name"}</Form.Label>
-                                        {(values.length > 0 && counter !== undefined) ?
-                                            (<Form.Control type="text" value={values[counter].user} />) :
-                                            (<Form.Control id="name" type="text" required onChange={handleChange} />)}
+                                        <Form.Control
+                                            id="name"
+                                            type="text"
+                                            required
+                                            onChange={handleChange}
+                                            value={(values.length > 0 && counter !== undefined) ? values[counter].user : submission.user}
+                                            readOnly={values.length > 0 ? true : false}
+                                        />
                                     </Form.Group>
                                     {survey.questions.map((question) => (
                                         question.open ?
                                             (<Form.Group key={question.id} >
                                                 <Form.Label className="font-weight-bold">{question.text}</Form.Label>
                                                 <Form.Text className="text-muted" > Max 200 characters{(question.min >= 1) ? ", compulsory" : ""}</Form.Text>
-                                                {(values.length > 0 && counter !== undefined) ?
-                                                    (<Form.Control as="textarea" rows={3} value={findAnswer(question.id)} />) :
-                                                    (<Form.Control as="textarea" rows={3}
-                                                        maxLength="200" id={question.id}
-                                                        required={(question.min >= 1) ? true : false}
-                                                        onChange={handleChange} />)}
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={3}
+                                                    maxLength="200" id={question.id}
+                                                    required={(question.min >= 1) ? true : false}
+                                                    onChange={handleChange}
+                                                    value={(values.length > 0 && counter !== undefined) ? findAnswer(question.id) : findValue(question.id)}
+                                                    readOnly={values.length > 0 ? true : false}
+                                                />
                                             </Form.Group>
                                             ) :
                                             (<Form.Group key={question.id} >
@@ -169,11 +187,15 @@ export default function SurveyForm(props) {
                                                     <Row>
                                                         {question.options.map((x) => (
                                                             <Col key={x.id} md={3} >
-                                                                <Form.Group  >
-                                                                    {(values.length > 0 && counter !== undefined) ?
-                                                                        (<Form.Check type="checkbox" label={x.text} checked={findAnswer(question.id, x.text)} />) :
-                                                                        (<Form.Check type="checkbox" id={x.id} label={x.text}
-                                                                            onChange={(e) => { handleChange(e, question.id, x.text) }} />)}
+                                                                <Form.Group >
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        id={x.id}
+                                                                        label={x.text}
+                                                                        onChange={(e) => { handleChange(e, question.id, x.text) }}
+                                                                        readOnly={values.length > 0 ? true : false}
+                                                                        checked={(values.length > 0 && counter !== undefined) ? findAnswer(question.id, x.text) : findValue(question.id, x.text)}
+                                                                    />
                                                                 </Form.Group>
                                                             </Col>
                                                         ))}
@@ -184,7 +206,7 @@ export default function SurveyForm(props) {
                                     ))}
                                 </Card.Body>
                                 <Card.Footer >
-                                    {compilationError && <Alert variant="danger">Check the compilation, there are some errors!</Alert>}
+                                    {compilationError && <Alert variant="danger">Check the compilation, there are some errors! <br /> Follow the given directions.</Alert>}
 
                                     <div className="d-flex justify-content-between">
                                         <Link style={{ textDecoration: "none" }} to="/">
@@ -195,16 +217,16 @@ export default function SurveyForm(props) {
                                             <Pagination.Prev
                                                 onClick={() => setCounter((old) => {
                                                     if (old - 1 >= 0) return old - 1
-                                                    else return values.length-1
+                                                    else return values.length - 1
                                                 })} />
                                             {values.map((item, index) => (
-                                                index <9 && <Pagination.Item key={index} active={counter + 1 === index + 1}
+                                                index < 9 && <Pagination.Item key={index} active={counter + 1 === index + 1}
                                                     onClick={(() => { setCounter(index) })} >{index + 1}</Pagination.Item>
-                                                    
+
                                             ))}
-                                            {values.length>= 9 && <><Pagination.Ellipsis active={counter + 1 > 9 && counter + 1 < values.length}/>
-                                            <Pagination.Item key={values.length-1 } active={counter + 1 === values.length}
-                                            onClick={(() => { setCounter(values.length-1) })}  >{values.length}</Pagination.Item></>}
+                                            {values.length >= 9 && <><Pagination.Ellipsis active={counter + 1 > 9 && counter + 1 < values.length} />
+                                                <Pagination.Item key={values.length - 1} active={counter + 1 === values.length}
+                                                    onClick={(() => { setCounter(values.length - 1) })}  >{values.length}</Pagination.Item></>}
                                             <Pagination.Next
                                                 onClick={() => setCounter((old) => {
                                                     if (old + 1 < values.length) return old + 1

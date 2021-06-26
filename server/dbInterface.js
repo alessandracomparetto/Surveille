@@ -86,8 +86,8 @@ const db_getSurvey = async (surveyid) => {
 
 const db_getAdminSurveys = (adminid) => {
     return new Promise((resolve, reject) => {
-        let sql = 'SELECT s.id, s.title, count(*) as num FROM survey S, submission SS \
-                    where s.id = ss.id_survey AND s.id_admin = ? \
+        let sql = 'SELECT s.id, s.title, count(distinct ss.id) as num FROM survey S LEFT JOIN submission SS \
+                    ON s.id = ss.id_survey where s.id_admin = ? \
                     GROUP by s.id '
         db.all(sql, [adminid], (err, rows) => {
             if (err) return reject(err);
@@ -137,7 +137,7 @@ const db_getAnswers = (surveyid) => {
                 if (index === -1) {
                     result.push({
                         "id_submission": x.id_submission,
-                        "user" : x.user,
+                        "user": x.user,
                         values: [
                             { "id_question": x.id_question, "value": x.value }
                         ]
@@ -151,6 +151,38 @@ const db_getAnswers = (surveyid) => {
             resolve(result);
         })
     })
+}
+
+const db_addSurvey = async (survey, adminid) => {
+    let sql = 'INSERT INTO survey(title, id_admin) VALUES (?, ?)'
+    let lastID = await new Promise((resolve, reject) => {
+        db.run(sql, [survey.title, adminid], function (err) {
+            if (err) return reject(err);
+            resolve(this.lastID);
+        })
+    })
+
+    for (const question of survey.questions) {
+        sql = 'INSERT INTO question (id_survey, text, open, min, max) VALUES (?, ?, ?, ?, ?)'
+        let questionId = await new Promise((resolve, reject) => {
+            db.run(sql, [lastID, question.question, question.open, question.min, question.max], function (err) {
+                if (err) return reject(err);
+                resolve(this.lastID);
+            })
+        })
+        if (!question.open) {
+            sql = 'INSERT INTO option (id_question, text) VALUES (?,?)'
+            for (const option of question.options) {
+                await new Promise((resolve, reject) => {
+                    db.run(sql, [questionId, option], function (err) {
+                        if (err) return reject(err);
+                        resolve(this.lastID);
+                    })
+                })
+            }
+        }
+    }
+    return lastID;
 }
 
 //AUTH
@@ -255,11 +287,40 @@ const areValidMinMax = async (answers, id) => {
     return true;
 }
 
+const isValidQuestion = async (question) => {
+    if (!question.question) throw new Error('Invalid question')
+    if (question.min > question.max) throw new Error('Invalid min number')
+    if (question.min < 0 || question.max < 0) throw new Error('Invalid range')
+    if (question.open && (question.min > 1 || question.max > 1)) throw new Error('Invalid range for open question')
+    if (!question.open) {
+        if (question.min > 10 || question.max > 10) throw new Error('Invalid range for multiple choice question')
+        if (question.max > question.options.length) throw new Error('Invalid max and number of options')
+        for (const option of question.options) {
+            if (option.split(" ").join("").length === 0) throw new Error('Invalid option')
+        }
+    }
+    return true;
+}
+
+const isValidUser = (surveyid, userid) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT * FROM survey WHERE id = ? AND id_admin = ?'
+        db.get(sql, [surveyid, userid], (err, row) => {
+            if (err) return reject({ "error": err });
+            if (row === undefined) return reject('No such survey for this users');
+            resolve(row)
+        })
+    })
+
+}
+
 exports.db_getSurveys = db_getSurveys
 exports.db_getSurvey = db_getSurvey
 exports.db_getAdminSurveys = db_getAdminSurveys
 exports.db_getAnswers = db_getAnswers
 exports.db_addSubmission = db_addSubmission
+exports.db_addSurvey = db_addSurvey
+
 //auth
 exports.db_getUser = db_getUser
 exports.db_getuserById = db_getuserById
@@ -267,3 +328,5 @@ exports.db_getuserById = db_getuserById
 exports.isValidSurvey = isValidSurvey
 exports.areValidAnswers = areValidAnswers
 exports.areValidMinMax = areValidMinMax
+exports.isValidQuestion = isValidQuestion
+exports.isValidUser = isValidUser

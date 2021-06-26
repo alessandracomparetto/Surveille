@@ -1,17 +1,22 @@
 import { Card, Button, Alert, Container, Form, Row, Col, } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { useState } from "react";
+import { sendSurvey } from "../../API/PostApi"
 import QuestionCard from "./QuestionCard";
+import ErrorAlert from "../ErrorAlert";
 
 export default function SurveyCreationForm() {
+    const [loading, setloading] = useState(false);
     const [title, setTitle] = useState("")
     const [questions, setQuestions] = useState([{ question: "", min: 0, max: 1, open: 1, options: [""] }]);
     const [compilationError, setCompilationError] = useState(false);
+    const [redirectState, setRedirectState] = useState("");
+    const [errorApi, seterrorApi] = useState(false);
 
     const updateOptions = (value, questionIndex, optionIndex) => {
         if (value === 0) {
             setQuestions(old => old.map((item, i) => {
-                if (i === questionIndex) return { ...item, "options": [...item.options, " "] }
+                if (i === questionIndex) return { ...item, "options": [...item.options, ""] }
                 else return item;
             }))
         }
@@ -97,6 +102,7 @@ export default function SurveyCreationForm() {
         event.preventDefault();
         event.stopPropagation();
         setCompilationError(false)
+        setloading(false)
 
         if (questions.length === 0) flag = true;
         for (const question of questions) {
@@ -117,12 +123,21 @@ export default function SurveyCreationForm() {
                 }
             }
         }
-
         if (flag) setCompilationError(true)
+        else {
+            sendSurvey({ "title": title, "questions": [...questions] })
+                .then(() => {
+                    setloading(true);
+                    setRedirectState("/")
+                }).catch((err) => {
+                    seterrorApi(err);
+                })
+        }
     };
 
     return (
         <>
+            {redirectState && <Redirect to="/" />}
             <Container className="marginTopNavbar">
                 <Card className="text-center" border="warning">
                     <Card.Header> <h2>Let's create a new survey! </h2></Card.Header>
@@ -155,17 +170,20 @@ export default function SurveyCreationForm() {
                                 <li>In a multiple choice question, you must have at least one non-empty option.</li>
                                 <li>Max number must be less than or equal to the number of options.</li>
                                 <li>Options must not be empty. Delete the ones you're not using.</li>
-                                </ul>
+                            </ul>
                             Fix your mistakes and try again. </Alert>}
-
+                        {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
+                        {errorApi &&
+                            <><ErrorAlert errors={errorApi} />
+                                <Link style={{ textDecoration: "none" }} to="/">
+                                    <Button variant="secondary">Back</Button>
+                                </Link></>}
                         <Card.Footer className="d-flex justify-content-between">
-
                             <Link style={{ textDecoration: "none" }} to="/">
                                 <Button variant="secondary">Back</Button>
                             </Link>
                             <Button variant="magenta"
                                 onClick={() => { setQuestions(old => [...old, { question: "", min: 0, max: 1, open: 1, options: [""] }]) }}>Add question</Button>
-
                             <Button variant="purple" type="submit" >Submit</Button>
                         </Card.Footer>
                     </Form>

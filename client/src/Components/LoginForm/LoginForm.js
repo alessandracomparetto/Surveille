@@ -10,8 +10,8 @@ import ErrorAlert from "../ErrorAlert";
 
 const LoginForm = (props) => {
   const [validated, setValidated] = useState(false);
-  const [mail, setmail] = useState("kurapika@studenti.polito.it");
-  const [password, setpassword] = useState("Qwerty123");
+  const [mail, setmail] = useState("");
+  const [password, setpassword] = useState("");
   const [errorDetected, setErrorDetected] = useState(false);
   const [redirectState, setRedirectState] = useState("");
 
