@@ -51,7 +51,7 @@ export default function SurveyCreationForm() {
     const updateOpen = (questionIndex) => {
         if (!questions[questionIndex].open) {
             setQuestions(old => old.map((item, index) => {
-                if (index === questionIndex) return { ...item, open: 1, options: [" "] }
+                if (index === questionIndex) return { ...item, open: 1, options: [""] }
                 else return item;
             }))
         }
@@ -138,7 +138,7 @@ export default function SurveyCreationForm() {
     return (
         <>
             {redirectState && <Redirect to="/" />}
-            <Container className="marginTopNavbar">
+            <Container className="marginTopNavbar pb-4">
                 <Card className="text-center" border="warning">
                     <Card.Header> <h2>Let's create a new survey! </h2></Card.Header>
                     <Form onSubmit={handleSubmit} >

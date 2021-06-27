@@ -140,7 +140,7 @@ export default function SurveyForm(props) {
     return (
         <>
             {redirectState && <Redirect to="/" />}
-            <Container className="marginTopNavbar">
+            <Container className="marginTopNavbar pb-4">
                 {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
                 {errorApi ?
                     (<><ErrorAlert errors={errorApi} />

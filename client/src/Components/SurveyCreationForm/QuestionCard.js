@@ -1,7 +1,6 @@
 import { Card, Button, Form, Row, Col, } from "react-bootstrap";
 import * as Icons from "react-bootstrap-icons";
 
-
 export default function QuestionCard(props) {
 
     return (
@@ -69,10 +68,5 @@ export default function QuestionCard(props) {
                 ))}
             </Card.Body>
         </Card>
-
-
-
-
-
     )
 }

@@ -32,7 +32,7 @@ const genericGet = (path) => {
 }
 
 const getSurveys = () => {
-  return genericGet("http://localhost:3000/api/surveys")
+  return genericGet(`http://localhost:3000/api/surveys`)
 }
 
 const getSurvey = (id) => {
