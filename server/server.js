@@ -152,8 +152,12 @@ app.get("/api/adminsurveys/:id/answers", [isLoggedIn,
   })
 
 //POST /api/submission
-app.post("/api/submission",
-  [check("survey").isInt({ min: 1 }).custom(async val => await dbInterface.isValidSurvey(val)),
+app.post("/api/submission", [
+  check("survey").isInt({ min: 1 }).custom(async val => await dbInterface.isValidSurvey(val)),
+  check("user").exists().custom(val => {
+    if (val.split(" ").join("").length === 0) throw new Error('Invalid user name')
+    else return true
+  }),
   check("answers").exists().isArray().custom(async (val, { req }) => await dbInterface.areValidMinMax(val, req.body.survey)),
   check("answers[*]").exists().custom(async (val) => await dbInterface.areValidAnswers(val))],
   async (req, res) => {
@@ -174,9 +178,15 @@ app.post("/api/submission",
 //POST /api/survey
 app.post("/api/survey", [
   isLoggedIn,
-  check("title").exists(),
-  check("questions").exists().isArray(),
-  check("questions[*]").exists().custom(async (question) => await dbInterface.isValidQuestion(question))],
+  check("title").exists().custom(val => {
+    if (val.split(" ").join("").length === 0) throw new Error('Invalid title')
+    else return true
+  }),
+  check("questions").exists().isArray().custom(val => {
+    if (val.length === 0) throw new Error("Survey has no questions") 
+    else return true
+  }),
+    check("questions[*]").exists().custom(async (question) => await dbInterface.isValidQuestion(question))],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

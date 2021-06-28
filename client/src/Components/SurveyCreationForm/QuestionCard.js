@@ -43,7 +43,8 @@ export default function QuestionCard(props) {
                 <Form.Group as={Row} >
                     <Col sm={6}>
                         <Form.Check inline label="Multiple choice" type="checkbox" className="pb-0 my-auto"
-                            onClick={() => { props.updateOpen(props.index) }} />
+                            checked = {!props.question.open}
+                            onChange={() => { props.updateOpen(props.index) }} />
                     </Col>
                     <Col sm={6}>
                         <Button variant="outline-dark" disabled={props.question.open}
@@ -61,8 +62,8 @@ export default function QuestionCard(props) {
                         </Col>
 
                         <Col sm={1}>
-                            <Button variant="light"><Icons.XCircle className="text-danger"
-                                onClick={() => { props.updateOptions(-1, props.index, index) }} /></Button>
+                            <Button variant="light" onClick={() => { props.updateOptions(-1, props.index, index) }}>
+                                <Icons.XCircle className="text-danger"/></Button>
                         </Col>
                     </Form.Group>
                 ))}

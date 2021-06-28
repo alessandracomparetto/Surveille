@@ -46,4 +46,22 @@ const getAdminSurveys = () => {
 const getAdminSurveyAnswers = (id) => {
   return genericGet(`http://localhost:3000/api/adminsurveys/${id}/answers`)
 }
-export { getSurveys, getSurvey, getAdminSurveys, getAdminSurveyAnswers }
+
+const getLoggedUser = () => {
+  return new Promise((resolve) => {
+    fetch("http://localhost:3000/api/sessions/current", {
+      method: "GET",
+    })
+      .then(res => res.text().then(username => {
+        if (!res.ok) {
+          const error = new Error(`${res.status}: ${res.statusText}`);
+          error.response = res;
+          throw error;
+        }
+        resolve(username);
+      }))
+      .catch(()=>resolve(""));
+  });
+}
+
+export { getSurveys, getSurvey, getAdminSurveys, getAdminSurveyAnswers, getLoggedUser }

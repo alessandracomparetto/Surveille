@@ -2,29 +2,24 @@ import { Navbar, Dropdown, Button, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import * as Icons from "react-bootstrap-icons";
 import { logoutUser } from "../../API/DeleteApi";
-import { Redirect } from "react-router-dom";
 import { useState } from "react";
 
 import "./MyNav.css";
 
 export default function MyNav(props) {
-
-    const [redirectState, setRedirectState] = useState("");
     const [logoutError, setLogoutError] = useState(false);
 
     const handleLogout = () => {
         setLogoutError(false)
         logoutUser()
             .then(() => {
-                props.setUserName("");
-                setRedirectState("/")
+                props.setUserName("");               
             })
             .catch((err) => setLogoutError(true))
     }
 
     return (
         <>
-            {redirectState && <Redirect to="/" />}
             <Navbar className="pr-2" variant="dark" fixed="top" expand="sm">
                 <Navbar.Brand href="/">
                     <Icons.Award size="1.2em" className="mr-2" />

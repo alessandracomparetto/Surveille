@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Redirect } from "react-router-dom";
 import { getSurvey, getAdminSurveyAnswers } from "../API/GetApi";
-import { Card, Button, Alert, Container, Form, Row, Col, Pagination } from "react-bootstrap";
+import { Card, Button, Alert, Container, Form, Row, Col, Pagination, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 import ErrorAlert from "./ErrorAlert";
@@ -9,8 +9,9 @@ import { sendSubmission } from "../API/PostApi";
 
 export default function SurveyForm(props) {
     const [loading, setloading] = useState(true);
+    const [sending, setSending] = useState(false);
     const [errorApi, seterrorApi] = useState(false);
-    const [compilationError, setCompilationError] = useState(false);
+    const [compilationError, setCompilationError] = useState("");
     const [redirectState, setRedirectState] = useState("");
 
     const surveyid = useParams();
@@ -19,7 +20,9 @@ export default function SurveyForm(props) {
     const [values, setValues] = useState([]);
     const [counter, setCounter] = useState();
 
+
     useEffect(() => {
+        setValues([])
         getSurvey(surveyid.id)
             .then((res) => {
                 seterrorApi(false);
@@ -41,8 +44,7 @@ export default function SurveyForm(props) {
             .finally(() => {
                 setloading(false);
             })
-        // eslint-disable-next-line
-    }, [])
+    }, [surveyid.id, props.userName])
 
     const handleChange = (event, question_id, text) => {
         let temp = { ...submission };
@@ -75,37 +77,51 @@ export default function SurveyForm(props) {
     const validation = () => {
         let result = true;
         let count = 0;
-
+        let tmp;
+        if (!submission.user.replaceAll(' ', '')) {
+            setCompilationError("You must write a non empty name!");
+            return false;
+        }
         for (const question of survey.questions) {
             count = 0;
             if (!question.open) {
-                for (const answer of submission.answers) {
-                    if (answer.id_question === question.id) {
-                        count++;
-                    }
-                }
-                if (count) result = result && count >= question.min && count <= question.max;
+                count = submission.answers.filter((x) => x.id_question === question.id).length
+                if (count)
+                    result = result && count >= question.min && count <= question.max;
                 else result = result && question.min === 0
+                if (!result) {
+                    setCompilationError("You didn't respect the range in one or more multiple choice questions.")
+                    return false
+                }
+            }
+            else {
+                tmp = (submission.answers.filter((x) => x.id_question === question.id))[0]
+                if(tmp && !tmp.value.replaceAll(' ', '') && question.min === 1){
+                    setCompilationError("You have an empty response inside a compulsory question.")
+                    return false
+                }
             }
         }
-        return result;
+        return true;
     }
 
     const handleSubmit = (event) => {
         event.preventDefault();
         event.stopPropagation();
         if (validation()) {
-            setCompilationError(false);
+            setCompilationError("");
+            setSending(true);
             sendSubmission(submission)
                 .then(() => {
                     setloading(true);
                     setRedirectState("/")
                 }).catch((err) => {
                     seterrorApi(err);
+                    setSending(false)
                 })
         }
         else {
-            setCompilationError(true);
+            setSending(false)
         }
     };
 
@@ -137,6 +153,7 @@ export default function SurveyForm(props) {
         }
 
     }
+
     return (
         <>
             {redirectState && <Redirect to="/" />}
@@ -151,7 +168,7 @@ export default function SurveyForm(props) {
                     (!loading &&
                         <Card className="text-center" border="warning">
                             <Card.Header> <h2>Title: {survey.title} </h2></Card.Header>
-                            <Form onSubmit={handleSubmit} >
+                            <Form onSubmit={handleSubmit}>
                                 <Card.Body>
                                     <Form.Group>
                                         <Form.Label>{props.userName ? "Compilation from user:" : "Please, write here your name"}</Form.Label>
@@ -161,7 +178,7 @@ export default function SurveyForm(props) {
                                             required
                                             onChange={handleChange}
                                             value={(values.length > 0 && counter !== undefined) ? values[counter].user : submission.user}
-                                            readOnly={values.length > 0 ? true : false}
+                                            readOnly={(values.length > 0 || props.userName) ? true : false}
                                         />
                                     </Form.Group>
                                     {survey.questions.map((question) => (
@@ -176,7 +193,7 @@ export default function SurveyForm(props) {
                                                     required={(question.min >= 1) ? true : false}
                                                     onChange={handleChange}
                                                     value={(values.length > 0 && counter !== undefined) ? findAnswer(question.id) : findValue(question.id)}
-                                                    readOnly={values.length > 0 ? true : false}
+                                                    readOnly={(values.length > 0 || props.userName) ? true : false}
                                                 />
                                             </Form.Group>
                                             ) :
@@ -192,8 +209,7 @@ export default function SurveyForm(props) {
                                                                         type="checkbox"
                                                                         id={x.id}
                                                                         label={x.text}
-                                                                        onChange={(e) => { handleChange(e, question.id, x.text) }}
-                                                                        readOnly={values.length > 0 ? true : false}
+                                                                        onChange={(values.length > 0 || props.userName) ? function () { } : ((e) => { handleChange(e, question.id, x.text) })}
                                                                         checked={(values.length > 0 && counter !== undefined) ? findAnswer(question.id, x.text) : findValue(question.id, x.text)}
                                                                     />
                                                                 </Form.Group>
@@ -206,12 +222,13 @@ export default function SurveyForm(props) {
                                     ))}
                                 </Card.Body>
                                 <Card.Footer >
-                                    {compilationError && <Alert variant="danger">Check the compilation, there are some errors! <br /> Follow the given directions.</Alert>}
+                                    {compilationError && <Alert variant="danger">Check the compilation, there are some errors! <br /> {compilationError} <br /> Follow the given directions.</Alert>}
 
                                     <div className="d-flex justify-content-between">
                                         <Link style={{ textDecoration: "none" }} to="/">
                                             <Button variant="secondary">Back</Button>
                                         </Link>
+                                        {sending && <Spinner animation="border" />}
                                         {!props.userName && <Button variant="purple" type="submit">Submit your answers!</Button>}
                                         {values.length > 0 && counter !== undefined && <Pagination>
                                             <Pagination.Prev

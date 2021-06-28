@@ -259,6 +259,7 @@ const areValidAnswers = async (answer) => {
     }
     else {
         if (!(answer.value.length <= 200)) throw new Error('Answer is too long')
+        if (answer.value.split(" ").join("").length === 0 && question.min === 1) throw new Error('Empty answer.')
     }
     return true;
 }
@@ -288,7 +289,7 @@ const areValidMinMax = async (answers, id) => {
 }
 
 const isValidQuestion = async (question) => {
-    if (!question.question) throw new Error('Invalid question')
+    if (!question.question || question.question.split(" ").join("").length === 0) throw new Error('Invalid question')
     if (question.min > question.max) throw new Error('Invalid min number')
     if (question.min < 0 || question.max < 0) throw new Error('Invalid range')
     if (question.open && (question.min > 1 || question.max > 1)) throw new Error('Invalid range for open question')
@@ -297,6 +298,7 @@ const isValidQuestion = async (question) => {
         if (question.max > question.options.length) throw new Error('Invalid max and number of options')
         for (const option of question.options) {
             if (option.split(" ").join("").length === 0) throw new Error('Invalid option')
+            if(question.options.filter((x) => x=== option).length>1) throw new Error('Invalid option')
         }
     }
     return true;

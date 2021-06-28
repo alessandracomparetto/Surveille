@@ -1,4 +1,4 @@
-import { Card, Button, Alert, Container, Form, Row, Col, } from "react-bootstrap";
+import { Card, Button, Alert, Container, Form, Row, Col, Spinner } from "react-bootstrap";
 import { Link, Redirect } from "react-router-dom";
 import { useState } from "react";
 import { sendSurvey } from "../../API/PostApi"
@@ -6,7 +6,7 @@ import QuestionCard from "./QuestionCard";
 import ErrorAlert from "../ErrorAlert";
 
 export default function SurveyCreationForm() {
-    const [loading, setloading] = useState(false);
+    const [sending, setSending] = useState(false);
     const [title, setTitle] = useState("")
     const [questions, setQuestions] = useState([{ question: "", min: 0, max: 1, open: 1, options: [""] }]);
     const [compilationError, setCompilationError] = useState(false);
@@ -87,7 +87,7 @@ export default function SurveyCreationForm() {
     const moveQuestion = (questionIndex, destination) => {
         if (questions.length === 1) return
         if (questionIndex === 0 && destination === -1) return
-        if (questionIndex === questions.length && destination === 1) return;
+        if (questionIndex === questions.length - 1 && destination === 1) return;
         setQuestions(old => {
             let data = [...old];
             let temp = { ...data[questionIndex] };
@@ -97,40 +97,59 @@ export default function SurveyCreationForm() {
         })
     }
 
-    const handleSubmit = (event) => {
-        let flag = false;
-        event.preventDefault();
-        event.stopPropagation();
-        setCompilationError(false)
-        setloading(false)
-
-        if (questions.length === 0) flag = true;
+    const validation = () => {
+        if (!title.replaceAll(' ', '')) {
+            setCompilationError("Title must not be empty")
+            return false
+        }
+        if (questions.length === 0) {
+            setCompilationError("Your survey must have at least one question!")
+            return false
+        }
         for (const question of questions) {
+            if (!question.question.replaceAll(' ', '')) {
+                setCompilationError("You have at least one question that is empty. Delete it or fill it in.")
+                return false
+            }
             if (!question.open) {
                 if (question.options.length < 1) {
-                    flag = true
-                    break
+                    setCompilationError("You created a multiple choice question that has no options. Please add them.")
+                    return false
                 }
-                if (question.max > question.options.length) {
-                    flag = true;
-                    break;
+                if ((question.max > question.options.length)) {
+                    setCompilationError("You created a multiple choice question whose \"max\" is higher than the number of options. Add more options or reduce both min and max.")
+                    return false
                 }
                 for (const option of question.options) {
                     if (!option.replaceAll(' ', '')) {
-                        flag = true;
-                        break;
+                        setCompilationError("You created a question that has at least one empty option. Plase delete it or fill it.")
+                        return false
+                    }
+                    if (question.options.filter((x) => x === option).length > 1) {
+                        setCompilationError("You created a question that has at duplicated options. Plase delete it or modify it.")
+                        return false
                     }
                 }
             }
         }
-        if (flag) setCompilationError(true)
+        return true
+    }
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setCompilationError(false)
+        if (!validation()) {
+            setSending(false)
+        }
         else {
+            setSending(true);
             sendSurvey({ "title": title, "questions": [...questions] })
                 .then(() => {
-                    setloading(true);
                     setRedirectState("/")
                 }).catch((err) => {
                     seterrorApi(err);
+                    setSending(false);
                 })
         }
     };
@@ -166,13 +185,8 @@ export default function SurveyCreationForm() {
 
                         </Card.Body >
                         {compilationError && <Alert variant="danger">Check your compilation: <br />
-                            <ul>
-                                <li>In a multiple choice question, you must have at least one non-empty option.</li>
-                                <li>Max number must be less than or equal to the number of options.</li>
-                                <li>Options must not be empty. Delete the ones you're not using.</li>
-                            </ul>
+                            {compilationError} <br />
                             Fix your mistakes and try again. </Alert>}
-                        {loading && <Alert variant="info" className="mt-5"> Now loading</Alert>}
                         {errorApi &&
                             <><ErrorAlert errors={errorApi} />
                                 <Link style={{ textDecoration: "none" }} to="/">
@@ -182,6 +196,7 @@ export default function SurveyCreationForm() {
                             <Link style={{ textDecoration: "none" }} to="/">
                                 <Button variant="secondary">Back</Button>
                             </Link>
+                            {sending && <Spinner animation="border" />}
                             <Button variant="magenta"
                                 onClick={() => { setQuestions(old => [...old, { question: "", min: 0, max: 1, open: 1, options: [""] }]) }}>Add question</Button>
                             <Button variant="purple" type="submit" >Submit</Button>

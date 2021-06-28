@@ -5,12 +5,19 @@ import MyNav from "./Components/MyNav"
 import Homepage from "./Components/Homepage"
 import SurveyForm from "./Components/SurveyForm";
 import SurveyCreationForm from "./Components/SurveyCreationForm/SurveyCreationForm";
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { BrowserRouter as Router, Route, Switch, } from "react-router-dom";
+import { getLoggedUser } from "./API/GetApi";
 
 function App() {
   const [userName, setUserName] = useState("");
 
+  useEffect(() => {
+    getLoggedUser().then((username) => {
+      setUserName(username);
+    });
+  }, []);
+  
   return (
     <>
       <Router>
